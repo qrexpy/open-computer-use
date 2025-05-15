@@ -152,6 +152,10 @@ class SandboxAgent:
     def append_screenshot(self):
         return vision_model.call(
             [
+                Message(
+                    "You are analyzing the screen of a computer to complete a task.",
+                    role="system"
+                ),
                 *self.messages,
                 Message(
                     [
@@ -170,26 +174,35 @@ class SandboxAgent:
 
     def run(self, instruction):
 
-        self.messages.append(Message(f"OBJECTIVE: {instruction}"))
+        # Add the user's instruction as a user message
+        self.messages.append(Message(f"OBJECTIVE: {instruction}", role="user"))
         logger.log(f"USER: {instruction}", print=False)
 
         should_continue = True
         while should_continue:
             # Stop the sandbox from timing out
-            self.sandbox.set_timeout(60)
+            self.sandbox.set_timeout(300)  # Set a longer timeout of 5 minutes
 
+            # Get screenshot and analyze it
+            screenshot_analysis = self.append_screenshot()
+            logger.log(f"THOUGHT: {screenshot_analysis}", "green")
+
+            # Structure messages with proper roles to satisfy the API requirement
             content, tool_calls = action_model.call(
                 [
                     Message(
                         "You are an AI assistant with computer use abilities.",
                         role="system",
                     ),
+                    # Ensure we have a user message by adding the instruction again if needed
+                    Message(f"I need to: {instruction}", role="user"),
                     *self.messages,
+                    # Add screenshot analysis as assistant message
+                    Message(screenshot_analysis, role="assistant"),
+                    # Add final instruction as user message
                     Message(
-                        logger.log(f"THOUGHT: {self.append_screenshot()}", "green")
-                    ),
-                    Message(
-                        "I will now use tool calls to take these actions, or use the stop command if the objective is complete.",
+                        "Based on what you see in the screenshot, what tool should I use next? Use a tool call to proceed, or use the stop command if the objective is complete.",
+                        role="user"
                     ),
                 ],
                 tools,

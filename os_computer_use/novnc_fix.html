@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>noVNC Connection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .loading {
+            text-align: center;
+            margin: 20px 0;
+        }
+        #error {
+            color: red;
+            margin: 10px 0;
+            display: none;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+    <script>
+        // localStorage polyfill - apply before anything else
+        (function() {
+            try {
+                // Test if localStorage works
+                window.localStorage.setItem('__test__', '1');
+                window.localStorage.removeItem('__test__');
+                console.log("localStorage is working properly");
+            } catch (e) {
+                console.log("localStorage is not available, applying polyfill");
+                // Create a storage object
+                var storage = {};
+                // Replace localStorage with our polyfill
+                window.localStorage = {
+                    getItem: function(key) { return storage[key] || null; },
+                    setItem: function(key, value) { storage[key] = value; },
+                    removeItem: function(key) { delete storage[key]; },
+                    clear: function() { storage = {}; },
+                    key: function(n) { return Object.keys(storage)[n] || null; },
+                    get length() { return Object.keys(storage).length; }
+                };
+            }
+        })();
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Connecting to Sandbox via noVNC</h1>
+        <div class="loading">
+            <p>Redirecting to noVNC client with localStorage support...</p>
+            <div id="error">An error occurred while redirecting. Please click the button below to try again.</div>
+            <button onclick="redirectToNoVNC()">Open noVNC Client</button>
+        </div>
+    </div>
+
+    <script>
+        // Get the original noVNC URL from the query parameter
+        function getVncUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            let url = urlParams.get('url');
+            
+            // Add reconnection parameters if not already present
+            if (url && !url.includes('reconnect=')) {
+                url += (url.includes('?') ? '&' : '?') + 'reconnect=true&reconnect_delay=2000';
+            }
+            
+            return url;
+        }
+
+        function redirectToNoVNC() {
+            const vncUrl = getVncUrl();
+            if (vncUrl) {
+                console.log("Redirecting to noVNC URL: " + vncUrl);
+                
+                // Store the URL in localStorage for potential reconnection
+                try {
+                    localStorage.setItem('lastVncUrl', vncUrl);
+                } catch (e) {
+                    console.error("Failed to store VNC URL: " + e);
+                }
+                
+                window.location.href = vncUrl;
+            } else {
+                document.getElementById('error').style.display = 'block';
+            }
+        }
+
+        // Check connection status every 10 seconds
+        function checkConnectionStatus() {
+            if (window.opener && window.opener.closed) {
+                console.log("Parent window closed, attempting to reconnect");
+                redirectToNoVNC();
+            }
+        }
+
+        // Redirect automatically after a short delay
+        window.onload = function() {
+            setTimeout(redirectToNoVNC, 1000);
+            
+            // Start connection check
+            setInterval(checkConnectionStatus, 10000);
+        };
+    </script>
+</body>
+</html>
