@@ -1,7 +1,4 @@
 {
   "editor.formatOnSave": true,
-  "editor.defaultFormatter": "ms-python.black-formatter",
-  "github.copilot.advanced": {
-    "instructionPath": "/.github/copilot/instructions.md"
-  }
+  "editor.defaultFormatter": "ms-python.black-formatter"
 }
