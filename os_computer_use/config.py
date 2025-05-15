@@ -3,11 +3,14 @@
 from os_computer_use import providers
 from openai import OpenAI
 from os_computer_use.llm_provider import LLMProvider, Message, Text
+import os
 
 # Create a ZukiJourney provider class using the OpenAI API structure
 class ZukiJourneyProvider(LLMProvider):
     base_url = "https://api.zukijourney.com/v1"
-    api_key = "zu-8d81351fe379aa5bc0fd7d66632b0ab4"
+    api_key = os.getenv("ZUKI_API_KEY")
+    if not api_key:
+        raise RuntimeError("ZUKI_API_KEY environment variable not set. Please set it in your .env file or environment.")
     
     def __init__(self, model="gpt-4o"):
         self.model = model

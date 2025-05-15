@@ -22,10 +22,11 @@ except ImportError:
     print("e2b_code_interpreter not installed. Please install it first.")
     sys.exit(1)
 
-# Set API key if available
 api_key = os.getenv("E2B_API_KEY")
-if api_key:
-    os.environ["E2B_API_KEY"] = api_key
+if not api_key:
+    print("ERROR: E2B_API_KEY environment variable not set. Please set it in your .env file or environment.")
+    sys.exit(1)
+os.environ["E2B_API_KEY"] = api_key
 
 try:
     sandbox = Sandbox(id=sandbox_id)
